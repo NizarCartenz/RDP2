@@ -65,7 +65,7 @@ jobs:
       max-parallel: 10
     timeout-minutes: 370
     env:
-      RDP_USER: Nizarcartenz
+      RDP_USER: crtnz
       RDP_PASS: Ijay@250525
 
     steps:
