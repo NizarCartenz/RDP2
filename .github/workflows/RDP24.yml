@@ -1,4 +1,4 @@
-name: RDP CRTNZ
+name: RDP 24 CRTNZ
 
 on:
   workflow_dispatch:
