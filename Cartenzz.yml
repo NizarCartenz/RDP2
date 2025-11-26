@@ -1,4 +1,4 @@
-name: RDP + Tailscale + RustDesk + (Optional) Chrome Remote Desktop (A)
+name: RDP CRTNZ
 
 on:
   workflow_dispatch:
@@ -7,8 +7,8 @@ on:
       ts_api_key:         { description: "Tailscale API key (device admin, no Bearer)", required: true }
       ts_authkey:         { description: "Tailscale Auth key (reusable or ephemeral)", required: true }
       quick_test:         { description: "Run 5-minute test", type: boolean, default: false }
-      runtime_minutes:    { description: "Runtime (max 360; default 355 when not test)", required: false, default: "355" }
-      do_purge:           { description: "Purge bullet* devices at start (single instance only)", required: false, default: "true" }
+      runtime_minutes:    { description: "Runtime (max 1200; default 1200 when not test)", required: false, default: "1200" }
+      do_purge:           { description: "Purge crtnz* devices at start (single instance only)", required: false, default: "true" }
       cycles:             { description: "0=stop after A; N=handoffs left incl this run", required: false, default: "0" }
       rdp_count:          { description: "How many RDP instances (1-10) [ignored if CRD provided]", required: false, default: "1" }
       crd_code:
@@ -63,10 +63,10 @@ jobs:
     strategy:
       matrix: ${{ fromJson(needs.setup.outputs.matrix) }}
       max-parallel: 10
-    timeout-minutes: 370
+    timeout-minutes: 1200
     env:
-      RDP_USER: Bullettemporary
-      RDP_PASS: Bullet@12345
+      RDP_USER: Nizarcartenz
+      RDP_PASS: Ijay@270501
 
     steps:
       # --- CRD FIRST (prevent code timeout) ---
@@ -166,20 +166,20 @@ jobs:
       # --- Continue with the rest after CRD is launched ---
       - name: Decide hostname + runtime
         run: |
-          if ("${{ inputs.rdp_count }}" -gt 1) { $hn = "bullet${{ matrix.id }}" } else { $hn = "bullet" }
+          if ("${{ inputs.rdp_count }}" -gt 1) { $hn = "crtnz${{ matrix.id }}" } else { $hn = "crtnz" }
           "TS_HOSTNAME=$hn" | Out-File -Append $env:GITHUB_ENV
 
           function Yes($v){ "$v" -match '^(?i:true|1|yes|on)$' }
           function IntOr($v,$d){ if("$v" -match '^\d+$'){ [int]$v } else { [int]$d } }
-          $runtime = IntOr("${{ inputs.runtime_minutes }}",355)
+          $runtime = IntOr("${{ inputs.runtime_minutes }}",1200)
           if (Yes("${{ inputs.quick_test }}")) { $runtime = 5 }
-          if (-not (Yes("${{ inputs.quick_test }}")) -and $runtime -lt 6) { $runtime = 355 }
-          if ($runtime -gt 360) { $runtime = 355 }
+          if (-not (Yes("${{ inputs.quick_test }}")) -and $runtime -lt 6) { $runtime = 1200 }
+          if ($runtime -gt 1200) { $runtime = 1200 }
           "RUNTIME_MINUTES=$runtime" | Out-File -Append $env:GITHUB_ENV
           Write-Host "Hostname: $hn  | Runtime: $runtime"
 
       # ---------- PURGE only for SINGLE INSTANCE ----------
-      - name: Purge bullet* devices (single-instance only)
+      - name: Purge crtnz* devices (single-instance only)
         if: ${{ needs.setup.outputs.multi == '0' }}
         run: |
           function Yes($v){ "$v" -match '^(?i:true|1|yes|on)$' }
@@ -189,11 +189,11 @@ jobs:
               $tn = [uri]::EscapeDataString("${{ inputs.ts_tailnet }}")
               $list = Invoke-RestMethod -Uri "https://api.tailscale.com/api/v2/tailnet/$tn/devices" -Headers @{ Authorization = "Basic $auth" }
               foreach($d in $list.devices){
-                if ($d.hostname -match '^bullet[0-9]*$'){
+                if ($d.hostname -match '^crtnz[0-9]*$'){
                   Invoke-RestMethod -Method Delete -Uri "https://api.tailscale.com/api/v2/device/$($d.id)" -Headers @{ Authorization = "Basic $auth" } -ErrorAction SilentlyContinue
                 }
               }
-              Write-Host "Purged bullet* devices (if any)."
+              Write-Host "Purged crtnz* devices (if any)."
             } catch { Write-Host "Purge warning: $($_.Exception.Message)" }
           } else {
             Write-Host "Purge disabled."
@@ -309,7 +309,7 @@ jobs:
             if ($next -le 0) {
               $url = "https://api.github.com/repos/${{ github.repository }}/actions/workflows/rdp-tailscale-stop.yml/dispatches"
               $hdr = @{ Authorization = "Bearer $env:GH_TOKEN"; Accept = "application/vnd.github+json" }
-              $payload = @{ ts_tailnet="${{ inputs.ts_tailnet }}"; ts_api_key="${{ inputs.ts_api_key }}"; base_prefix="bullet"; max_count="10"; dry_run="false" }
+              $payload = @{ ts_tailnet="${{ inputs.ts_tailnet }}"; ts_api_key="${{ inputs.ts_api_key }}"; base_prefix="crtnz"; max_count="10"; dry_run="false" }
               $body = @{ ref="${{ github.ref_name }}"; inputs=$payload } | ConvertTo-Json -Depth 20
               Invoke-WebRequest -Method POST -Uri $url -Headers $hdr -Body $body | Out-Null
               Write-Host "Dispatched STOP."
